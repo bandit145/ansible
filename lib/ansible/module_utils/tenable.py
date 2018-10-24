@@ -5,14 +5,15 @@ from ansible.module_utils.urls import Request
 class TenableAPI:
 	ignore_params = ['username', 'password','validate_certs','state','server']
 
-	def __init__(self, server, module, validate_certs):
-		self.session = Request(validate_certs=validate_certs,headers={'Content-Type':'application/json'})
-		self.server = server
+	def __init__(self, module):
+		self.session = Request(validate_certs=module.params['validate_certs'],headers={'Content-Type':'application/json'})
 		self.module = module
 
-	def login(self, username, password):
+
+	def login(self):
 		try:
-			response = self.session.post(self.server+'/rest/token', data=(json.dumps({'username':username,'password':password})))
+			response = self.session.post(self.module.params['server']+'/rest/token', data=(json.dumps({'username':self.module.params['username'],
+				'password':self.module.params['password']})))
 			self.session.headers['X-SecurityCenter'] = str(json.loads(response.read())['response']['token'])
 		except urllib.error.HTTPError as error:
 			self.handle_http_error(error)
@@ -24,7 +25,7 @@ class TenableAPI:
 
 	def create(self, item, data):
 		try:
-			response = self.session.post(self.server+'/rest/'+item,data=json.dumps(data))
+			response = self.session.post(self.module.params['server']+'/rest/'+item,data=json.dumps(data))
 		except urllib.error.HTTPError as error:
 			self.handle_http_error(error)
 
@@ -60,7 +61,7 @@ class TenableAPI:
 	def update(self, item, data, existing_data):
 		try:
 			if self.is_different(data, existing_data):
-				response = self.session.patch(self.server+'/rest/'+item+'/'+existing_data['id'],data=json.dumps(data))
+				response = self.session.patch(self.module.params['server']+'/rest/'+item+'/'+existing_data['id'],data=json.dumps(data))
 				return True
 			else:
 				return False
@@ -69,13 +70,13 @@ class TenableAPI:
 
 	# only return data for use that is not the alias or the specifcally ignored paramaters
 	# that are the same across all the modules
-	def clean_data(self,data):
+	def clean_data(self):
 		arg_spec = [x for x in self.module.argument_spec.keys() if x not in self.ignore_params]
-		return {key: value for key, value in data.items() if key in arg_spec and value}
+		return {key: value for key, value in self.module.params.items() if key in arg_spec and value}
 
 	def remove(self, item, data, existing_data):
 		try:
-			response =  self.session.delete(self.server+'/rest/'+item+'/'+existing_data['id'])
+			response =  self.session.delete(self.module.params['server']+'/rest/'+item+'/'+existing_data['id'])
 			return True
 		except urllib.error.HTTPError as error:
 			self.handle_http_error(error)
@@ -83,17 +84,17 @@ class TenableAPI:
 	# translates item by name to id
 	def get_item_by_name(self, item, name):
 		try:
-			response = self.session.get(self.server+'/rest/'+item)
+			response = self.session.get(self.module.params['server']+'/rest/'+item)
 			response_json = json.loads(response.read())
 			if type(response_json['response']) == dict:
 				for obj in response_json['response']['manageable']:
 					if obj['name'] == name:
-						response = self.session.get(self.server+'/rest/'+item+'/'+obj['id'])
+						response = self.session.get(self.module.params['server']+'/rest/'+item+'/'+obj['id'])
 						return json.loads(response.read())['response']
 			else:
 				for obj in response_json['response']:
 					if obj['name'] == name:
-						response = self.session.get(self.server+'/rest/'+item+'/'+obj['id'])
+						response = self.session.get(self.module.params['server']+'/rest/'+item+'/'+obj['id'])
 						return json.loads(response.read())['response']
 			return None
 		except urllib.error.HTTPError as error:

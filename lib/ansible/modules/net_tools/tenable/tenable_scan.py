@@ -12,10 +12,10 @@ ID_MAPS = {
 	}
 
 def ensure(module):
-	tenable = TenableAPI(module.params['server'],module,module.params['validate_certs'])
-	tenable.login(module.params['username'],module.params['password'])
+	tenable = TenableAPI(module)
+	tenable.login()
 	# get cleaned data
-	new_params = tenable.clean_data(module.params)
+	new_params = tenable.clean_data()
 	# check for existing scan
 	existing_scan = tenable.get_item_by_name('scan',new_params['name'])
 	if module.params['state'] == 'present':
@@ -92,7 +92,6 @@ def main():
 			module.fail_json(msg='must provide properly formatted dictionat for schedule')
 		elif 'repository' not in module.params.keys():
 			module.fail_json(msg='"repository" is required when state is present')
-	module.fail_json(msg=module.params)
 	ensure(module)
 
 if __name__ == '__main__':

@@ -1,43 +1,55 @@
-import pytest
 from ansible.module_utils.tenable import TenableAPI
+from units.compat.mock import patch, MagicMock, Mock
 import unittest
 
-tenable = TenableAPI('server',None,False)
-module_params =  {
+
+class TestTenable(unittest.TestCase):
+
+	def set_up(self):
+		self.module = MagicMock(name='AnsibleModule')
+		self.module.check_mode = False
+		self.module.params= {
             "assets": None,
             "classifyMitigatedAge": 0,
             "credentials": None,
             "dhcpTracking": None,
             "emailOnFinish": False,
             "emailOnLaunch": False,
-            "ipList": None,
+            "ipList": [
+                "10.10.27.61",
+                "10.10.27.62"
+            ],
+            "ip_list": [
+                "10.10.27.61",
+                "10.10.27.62"
+            ],
             "maxScanTime": 3600,
             "name": "tenable-scan-test-scan",
-            "password": "password",
-            "policy": None,
+            "password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
+            "policy": "5.4.x non-Windows DIACAP Vulnerability Scan) Policy",
             "reports": None,
-            "repository": None,
+            "repository": "cloud repos high > 10.10.xx.xx",
             "rolloverType": "template",
             "scanningVirtualHosts": False,
             "schedule": {
                 "type": "template"
             },
-            "server": "https://server",
-            "state": "absent",
+            "server": "https://server/",
+            "state": "present",
             "timeoutAction": "import",
-            "type": None,
-            "username": "philip.bove",
+            "type": "policy",
+            "username": "user",
             "validate_certs": False,
             "zone": None
         }
 
-existing_data = {
+    self.sexisting_data = {
     "type": "regular",
     "response": {
-        "id": "410",
+        "id": "439",
         "name": "tenable-scan-test-scan",
         "description": "",
-        "ipList": "10.10.27.61",
+        "ipList": "10.10.27.61,10.10.27.62",
         "type": "policy",
         "dhcpTracking": "false",
         "classifyMitigatedAge": "0",
@@ -47,22 +59,15 @@ existing_data = {
         "scanningVirtualHosts": "false",
         "rolloverType": "template",
         "status": "0",
-        "createdTime": "1540306447",
-        "modifiedTime": "1540306505",
+        "createdTime": "1540400625",
+        "modifiedTime": "1540400625",
         "maxScanTime": "3600",
         "reports": [],
         "assets": [],
-        "credentials": [
-            {
-                "id": "1000010",
-                "name": "rhel-ngen",
-                "description": "",
-                "type": "ssh"
-            }
-        ],
+        "credentials": [],
         "numDependents": "0",
         "schedule": {
-            "id": "383",
+            "id": "409",
             "objectType": "scan",
             "type": "template",
             "start": "",
@@ -70,14 +75,14 @@ existing_data = {
             "nextRun": 0
         },
         "policy": {
-            "id": "1000006",
+            "id": "1000004",
             "context": "",
-            "name": "5.4.x Windows DIACAP Vulnerability Scan) Policy",
+            "name": "5.4.x non-Windows DIACAP Vulnerability Scan) Policy",
             "description": "Nessus Policy exported from SecurityCenter",
             "tags": "",
             "owner": {
                 "id": "1",
-                "username": "rich",
+                "username": "user",
                 "firstname": "",
                 "lastname": ""
             },
@@ -88,7 +93,7 @@ existing_data = {
             }
         },
         "repository": {
-            "id": "0",
+            "id": "2",
             "name": "cloud repos high > 10.10.xx.xx",
             "description": ""
         },
@@ -111,27 +116,53 @@ existing_data = {
         },
         "creator": {
             "id": "12",
-            "username": "philip.bove",
-            "firstname": "Philip",
-            "lastname": "Bove"
+            "username": "user",
+            "firstname": "user",
+            "lastname": "user"
         },
         "owner": {
             "id": "12",
-            "username": "philip.bove",
-            "firstname": "Philip",
-            "lastname": "Bove"
+            "username": "user",
+            "firstname": "user",
+            "lastname": "user"
         }
     },
     "error_code": 0,
     "error_msg": "",
     "warnings": [],
-    "timestamp": 1540306556
+    "timestamp": 1540400647
 }
 
 
-class TestTenable(unittest.TestCase):
-
 	def test_is_different(self):
-		self.AssertFalse(Tenable.is_different(module_params,existing_data))
+		tenable = TenableAPI(self.module)
+		self.AssertFalse(Tenable.is_different(self.module.params,self.existing_data))
+		diff_data = existing_data.deep_copy()
+		diff_data['ipList'] = '192.168.1.1'
+		self.AssertTrue(Tenable.is_different(self.module.params,diff_data))
+
+	def test_clean_data(self):
+		tenable = TenableAPI(self.module)
+		self.AssertEqual(TenableAPI.clean_data(), {
+            "ipList": [
+                "10.10.27.61",
+                "10.10.27.62"
+            ],
+            "ip_list": [
+                "10.10.27.61",
+                "10.10.27.62"
+            ],
+            "maxScanTime": 3600,
+            "name": "tenable-scan-test-scan",
+            "policy": "5.4.x non-Windows DIACAP Vulnerability Scan) Policy",
+            "repository": "cloud repos high > 10.10.xx.xx",
+            "rolloverType": "template",
+            "schedule": {
+                "type": "template"
+            },
+            "state": "present",
+            "timeoutAction": "import",
+            "type": "policy",
+        })
 
 		
