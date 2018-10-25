@@ -16,7 +16,7 @@ class TenableAPI:
 				'password':self.module.params['password']})))
 			self.session.headers['X-SecurityCenter'] = str(json.loads(response.read())['response']['token'])
 		except urllib.error.HTTPError as error:
-			self.handle_http_error(error)
+			self.__handle_http_error__(error)
 	
 	def exists(self,item,data):
 		if self.get_item_by_name(item, data['name']) != None:
@@ -27,7 +27,7 @@ class TenableAPI:
 		try:
 			response = self.session.post(self.module.params['server']+'/rest/'+item,data=json.dumps(data))
 		except urllib.error.HTTPError as error:
-			self.handle_http_error(error)
+			self.__handle_http_error__(error)
 
 	# recursivley walk the dictonary checking if data is the same
 	def is_different(self,data, existing_data):
@@ -66,7 +66,7 @@ class TenableAPI:
 			else:
 				return False
 		except urllib.error.HTTPError as error:
-			self.handle_http_error(error)
+			self.__handle_http_error__(error)
 
 	# only return data for use that is not the alias or the specifcally ignored paramaters
 	# that are the same across all the modules
@@ -79,15 +79,15 @@ class TenableAPI:
 			response =  self.session.delete(self.module.params['server']+'/rest/'+item+'/'+existing_data['id'])
 			return True
 		except urllib.error.HTTPError as error:
-			self.handle_http_error(error)
+			self.__handle_http_error__(error)
 
 	# translates item by name to id
-	def get_item_by_name(self, item, name):
+	def get_item_by_name(self, item, name,objtype='manageable'):
 		try:
 			response = self.session.get(self.module.params['server']+'/rest/'+item)
 			response_json = json.loads(response.read())
 			if type(response_json['response']) == dict:
-				for obj in response_json['response']['manageable']:
+				for obj in response_json['response'][objtype]:
 					if obj['name'] == name:
 						response = self.session.get(self.module.params['server']+'/rest/'+item+'/'+obj['id'])
 						return json.loads(response.read())['response']
@@ -98,11 +98,22 @@ class TenableAPI:
 						return json.loads(response.read())['response']
 			return None
 		except urllib.error.HTTPError as error:
-			self.handle_http_error(error)
+			self.__handle_http_error__(error)
+
+	def build_id_fields(self,id_maps, params,objtype='usable'):
+		for item in id_maps.keys():
+			if item in params.keys():
+				if self.module.argument_spec[item]['type'] == list:
+					id_param_list = []
+					for name in params[item]:
+						id_param_list.append(self.__build_id_field__(id_maps[item]['endpoint'],name,objtype))
+						params[item] = id_param_list 
+				else:
+					params[item] = self.__build_id_field__(id_maps[item]['endpoint'],params[item],objtype)
 
 	# helper method that subs a user paramter using a name with the id for the api call
-	def build_id_field(self, item, name):
-		return {'id': int(self.get_item_by_name(item, name)['id'])}
+	def __build_id_field__(self, item, name,objtype='usable'):
+		return {'id': int(self.get_item_by_name(item, name,objtype)['id'])}
 
-	def handle_http_error(self,error):
+	def __handle_http_error__(self,error):
 		self.module.fail_json(msg=str(error.code) +' '+ error.reason) #['error_msg'])

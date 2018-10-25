@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from ansible.module_utils.basic import *
-from ansible.module_utils.tenable import TenableAPI
+from ansible.module_utils.net_tools.tenable import TenableAPI
 
 # paramaters that require id mapping
 ID_MAPS = {
@@ -22,15 +22,7 @@ def ensure(module):
 		if 'ipList' in new_params.keys():
 			new_params['ipList'] = ','.join(new_params['ipList'])
 		# build id mappings from names provided
-		for item in ID_MAPS.keys():
-			if item in new_params.keys():
-				if module.argument_spec[item]['type'] == list:
-					id_param_list = []
-					for name in new_params[item]:
-						id_param_list.append(tenable.build_id_field(ID_MAPS[item]['endpoint'],name))
-					new_params[item] = id_param_list 
-				else:
-					new_params[item] = tenable.build_id_field(ID_MAPS[item]['endpoint'],new_params[item])
+		tenable.build_id_fields(ID_MAPS,new_params)
 		if existing_scan:
 			module.exit_json(changed=tenable.update('scan', new_params, existing_scan))
 		else:
