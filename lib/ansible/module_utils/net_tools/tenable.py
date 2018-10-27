@@ -118,4 +118,4 @@ class TenableAPI:
         return {'id': int(self.get_item_by_name(item, name,objtype)['id'])}
 
     def __handle_http_error__(self,error):
-        self.module.fail_json(msg=str(error.code) +' '+ error.reason) #['error_msg'])
+        self.module.fail_json(msg=str(error.code) +' '+ error.reason)
