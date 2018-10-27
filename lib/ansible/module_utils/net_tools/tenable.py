@@ -45,11 +45,11 @@ class TenableAPI:
                     difference = True
                     break
                 for dictionary in data[item]:
+                    id_dict = None
                     for dicts in existing_data[item]:
                         if str(dictionary['id']) == dicts['id']:
                             id_dict = dicts
                             break
-                        id_dict = None
                     if id_dict:
                         difference = self.is_different(dictionary,id_dict)
             # this evaluates the items at the end
