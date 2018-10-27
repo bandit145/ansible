@@ -29,7 +29,7 @@ class TenableAPI:
         except urllib.error.HTTPError as error:
             self.__handle_http_error__(error)
 
-    # This is a mess but It's nice if you don't have to rewrite a checker per
+    # This is a mess but It's nice if you don't have to rewrite a checker per module
     # recursivley walk the dictonary checking if data is the same
     def is_different(self,data, existing_data):
         difference = False
