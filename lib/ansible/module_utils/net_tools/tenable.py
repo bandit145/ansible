@@ -29,6 +29,7 @@ class TenableAPI:
         except urllib.error.HTTPError as error:
             self.__handle_http_error__(error)
 
+    # This is a mess but It's nice if you don't have to rewrite a checker per
     # recursivley walk the dictonary checking if data is the same
     def is_different(self,data, existing_data):
         difference = False
@@ -38,7 +39,7 @@ class TenableAPI:
                 return True
             elif type(data[item]) == dict:
                 difference = self.is_different(data[item], existing_data[item])
-            # if list, loop through that and pass onto function
+            # if list, loop through that and pass dicts onto function
             elif type(data[item]) == list:
                 if len(existing_data[item]) == 0:
                     difference = True
@@ -50,13 +51,11 @@ class TenableAPI:
                             break
                         id_dict = None
                     if id_dict:
-                        difference = self.is_different(dictionary,
-                            id_dict)
+                        difference = self.is_different(dictionary,id_dict)
             # this evaluates the items at the end
             elif str(data[item]) != existing_data[item]:
                 difference = True
                 break
-        print(difference)
         return difference
 
     # this method updates the item you are working on

@@ -75,7 +75,7 @@ def get_mock_module():
     }
     return module
 
-def get_data():
+def get_existing_data():
     return {
         "id": "439",
         "name": "tenable-scan-test-scan",
@@ -147,13 +147,8 @@ def get_data():
             }
     }
 
-class TestTenable(unittest.TestCase):
-
-    def test_clean_data(self):
-        module = get_mock_module()
-        existing_data = get_data()
-        tenable = TenableAPI(module)
-        self.assertEqual(tenable.clean_data(), {
+def get_clean_data():
+    return  {
             "ipList": [
                 "10.10.27.61",
                 "10.10.27.62"
@@ -168,14 +163,24 @@ class TestTenable(unittest.TestCase):
           },
           "timeoutAction": "import",
           "type": "policy",
-        })
+        }
+
+class TestTenable(unittest.TestCase):
+
+    def test_clean_data(self):
+        module = get_mock_module()
+        existing_data = get_existing_data()
+        tenable = TenableAPI(module)
+        self.assertEqual(tenable.clean_data(), get_clean_data())
         
     def test_is_different(self):
         module = get_mock_module()
-        existing_data = get_data()
+        existing_data = get_existing_data()
+        clean_data = get_clean_data()
         tenable = TenableAPI(module)
-        new_params = tenable.clean_data()
-        new_params['ipList'] = ','.join(new_params['ipList'])
-        self.assertFalse(tenable.is_different(new_params,existing_data))
+        clean_data['ipList'] = ','.join(clean_data['ipList'])
+        clean_data['repository'] = {'id': 2}
+        clean_data['policy'] = {'id': 1000004}
+        self.assertFalse(tenable.is_different(clean_data,existing_data))
         existing_data['ipList'] = '192.168.1.1'
-        self.assertTrue(tenable.is_different(new_params,diff_data))
+        self.assertTrue(tenable.is_different(clean_data,existing_data))
