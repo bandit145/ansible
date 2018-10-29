@@ -7,7 +7,7 @@ import copy
 def get_mock_module():
     module = MagicMock(name='AnsibleModule')
     module.check_mode = False
-    module.argument_spec = argument_spec = dict(
+    module.argument_spec = dict(
         server = dict(type=str, required=True),
         name = dict(type=str, required=True),
         username = dict(type=str,required=True),
@@ -90,6 +90,15 @@ def get_existing_data():
         "modifiedTime": "1540400625",
         "maxScanTime": "3600",
         "numDependents": "0",
+        "credentials":  [
+            {
+                "id": "1000003",
+                "name": "creds",
+                "description": "",
+                "type": "windows"
+            }
+
+        ],
         "schedule": {
             "id": "409",
             "objectType": "scan",
@@ -182,5 +191,19 @@ class TestTenable(unittest.TestCase):
         clean_data['repository'] = {'id': 2}
         clean_data['policy'] = {'id': 1000004}
         self.assertFalse(tenable.is_different(clean_data,existing_data))
-        existing_data['ipList'] = '192.168.1.1'
+        existing_data['ipList'] = '10.10.27.61'
         self.assertTrue(tenable.is_different(clean_data,existing_data))
+        existing_data = get_existing_data()
+        clean_data['credentials'] = [{'id':1000003}]
+        self.assertFalse(tenable.is_different(clean_data,existing_data))
+        clean_data['credentials'] = [{'id':1000004}]
+        self.assertTrue(tenable.is_different(clean_data,existing_data))
+        existing_data['credentials'].append({
+                "id": "1000005",
+                "name": "creds",
+                "description": "",
+                "type": "windows"
+            })
+        clean_data['credentials']=[{'id':1000005},{'id':1000003}]
+        self.assertFalse(tenable.is_different(clean_data,existing_data))
+

@@ -29,34 +29,27 @@ class TenableAPI:
         except urllib.error.HTTPError as error:
             self.__handle_http_error__(error)
 
-    # This is a mess but It's nice if you don't have to rewrite a checker per module
     # recursivley walk the dictonary checking if data is the same
     def is_different(self,data, existing_data):
-        difference = False
+        different = False
         for item in data.keys():
             # if dict pass onto function again
-            if item not in existing_data.keys():
-                return True
-            elif type(data[item]) == dict:
-                difference = self.is_different(data[item], existing_data[item])
-            # if list, loop through that and pass dicts onto function
+            if type(data[item]) == dict:
+                different = self.is_different(data[item], existing_data[item])
+            # if list, loop through that and pass onto function
             elif type(data[item]) == list:
                 if len(existing_data[item]) == 0:
-                    difference = True
+                    different =  True
                     break
                 for dictionary in data[item]:
-                    id_dict = None
                     for dicts in existing_data[item]:
-                        if str(dictionary['id']) == dicts['id']:
-                            id_dict = dicts
-                            break
-                    if id_dict:
-                        difference = self.is_different(dictionary,id_dict)
+                        different =  self.is_different(dictionary,dicts)
+                        break
             # this evaluates the items at the end
             elif str(data[item]) != existing_data[item]:
-                difference = True
+                different =  True
                 break
-        return difference
+        return different 
 
     # this method updates the item you are working on
     # but only if it is different
@@ -118,4 +111,4 @@ class TenableAPI:
         return {'id': int(self.get_item_by_name(item, name,objtype)['id'])}
 
     def __handle_http_error__(self,error):
-        self.module.fail_json(msg=str(error.code) +' '+ error.reason)
+        self.module.fail_json(msg=str(error.code) +' '+ error.reason) #['error_msg'])
