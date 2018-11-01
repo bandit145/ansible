@@ -23,59 +23,50 @@ def get_mock_module():
                     password = dict(type=str, required=True,no_log=True),
                     type = dict(type=str, required=False, choices=['plugin', 'policy']),
                     zone = dict(type=str, required=False),
-                    dhcpTracking = dict(type=bool, required=False, aliases=['dhcp_tracking']),
-                    classifyMitigatedAge = dict(type=int, required=False, 
-                        aliases=['classify_mitigated_age']),
+                    dhcp_tracking = dict(type=bool, required=False, aliases=['dhcp_tracking']),
+                    classify_mitigated_age = dict(type=int, required=False),
                     schedule = dict(type=dict, required=False,options=schedule_spec),
                     reports = dict(type=list,elements=dict, required=False,options=reports_spec),
                     repository = dict(type=str,required=False),
                     assets = dict(type=list, required=False),
                     credentials = dict(type=list, required=False),
-                    emailOnLaunch = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['email_on_launch']),
-                    emailOnFinish = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['email_on_finish']),
-                    timeoutAction = dict(type=str, required=False, default='import', 
-                        choices=['import','discard','rollover'], aliases=['timeout_action']),
-                    scanningVirtualHosts = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['scanning_virtual_hosts']),
-                    rolloverType = dict(type=str, required=False, default='template', choices=['nextDay','template'],
-                        aliases=['rollover_type']),
+                    email_on_launch = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    email_on_finish = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    timeout_action = dict(type=str, required=False, default='import', 
+                        choices=['import','discard','rollover']),
+                    scanning_virtual_hosts = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    rollover_type = dict(type=str, required=False, default='template', choices=['nextDay','template']),
                     policy = dict(type=str,required=False),
-                    ipList = dict(type=list, required=False,aliases=['ip_list']),
-                    maxScanTime = dict(type=int, required=False, default=3600, aliases=['max_scan_time']),
+                    ip_list = dict(type=list, required=False),
+                    max_scan_time = dict(type=int, required=False, default=3600),
                     validate_certs = dict(type=bool, required=False, default=True, choices=[True,False]),
                     state = dict(type=str,required=False, default='present',choices=['present','absent'])
-            )
+                )   
     module.params= {
         "assets": None,
-        "classifyMitigatedAge": 0,
+        "classify_mitigated_age": 0,
         "credentials": None,
-        "dhcpTracking": None,
-        "emailOnFinish": False,
-        "emailOnLaunch": False,
-        "ipList": [
-            "10.10.27.61",
-            "10.10.27.62"
-        ],
+        "dhcp_tracking": None,
+        "email_on_finish": False,
+        "email_on_launch": False,
         "ip_list": [
             "10.10.27.61",
             "10.10.27.62"
         ],
-        "maxScanTime": 3600,
+        "max_scan_time": 3600,
         "name": "tenable-scan-test-scan",
         "password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER",
         "policy": "5.4.x non-Windows DIACAP Vulnerability Scan Policy",
         "reports": None,
         "repository": "cloud repos high > 10.10.xx.xx",
-        "rolloverType": "template",
-        "scanningVirtualHosts": False,
+        "rollover_type": "template",
+        "scanning_virtual_hosts": False,
         "schedule": {
             "type": "template"
         },
         "server": "https://server/",
         "state": "present",
-        "timeoutAction": "import",
+        "timeout_action": "import",
         "type": "policy",
         "username": "user",
         "validate_certs": False,
@@ -188,7 +179,7 @@ class TestTenable(unittest.TestCase):
         module = get_mock_module()
         existing_data = get_existing_data()
         tenable = SecurityCenterAPI(module)
-        self.assertEqual(tenable.clean_data(), get_clean_data())
+        self.assertEqual(tenable.clean_data(module.params), get_clean_data())
         
     def test_is_different(self):
         module = get_mock_module()

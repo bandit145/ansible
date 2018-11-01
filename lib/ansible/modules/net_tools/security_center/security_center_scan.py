@@ -219,15 +219,21 @@ ID_MAPS = {
     'zone':{'endpoint':'zone'},
     'policy':{'endpoint':'policy'},
     'credentials':{'endpoint':'credential'},
-    'assets':{'endpoint':'asset'}
+    'assets':{'endpoint':'asset'},
+    'reports':{'endpoint':'reportDefinition'}
     }
 
 def ensure(module):
     tenable = SecurityCenterAPI(module)
     tenable.login()
     # get cleaned data
-    new_params = tenable.clean_data()
-    # check for existing scan
+    new_params = tenable.clean_data(module.params)
+    # deal with reports here because it is unique and annoying to abstract out
+    if module.params['reports']:
+        new_params['reports'] = []
+        for report in module.params['reports']:
+            new_params['reports'].append({'name':report['name'],'reportSource':report['report_source']})
+    # reports is nested deep and unique to this module
     existing_scan = tenable.get_item_by_name('scan',new_params['name'])
     if module.params['state'] == 'present':
         if 'ipList' in new_params.keys():
@@ -252,9 +258,8 @@ schedule_spec = dict(
 )
 reports_spec = dict(
     name=dict(type=str,required=True),
-    report_source=dict(type=str,required=True,
-        choices=['cumulative', 'patched', 'individual', 'lce', 'archive', 'mobile'],
-        aliases=['ReportSource'])
+    reportSource=dict(type=str,required=True,
+        choices=['cumulative', 'patched', 'individual', 'lce', 'archive', 'mobile'])
 )
 
 def main():
@@ -267,27 +272,22 @@ def main():
                     password = dict(type=str, required=True,no_log=True),
                     type = dict(type=str, required=False, choices=['plugin', 'policy']),
                     zone = dict(type=str, required=False),
-                    dhcpTracking = dict(type=bool, required=False, aliases=['dhcp_tracking']),
-                    classifyMitigatedAge = dict(type=int, required=False, 
-                        aliases=['classify_mitigated_age']),
+                    dhcp_tracking = dict(type=bool, required=False, aliases=['dhcp_tracking']),
+                    classify_mitigated_age = dict(type=int, required=False),
                     schedule = dict(type=dict, required=False,options=schedule_spec),
                     reports = dict(type=list,elements=dict, required=False,options=reports_spec),
                     repository = dict(type=str,required=False),
                     assets = dict(type=list, required=False),
                     credentials = dict(type=list, required=False),
-                    emailOnLaunch = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['email_on_launch']),
-                    emailOnFinish = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['email_on_finish']),
-                    timeoutAction = dict(type=str, required=False, default='import', 
-                        choices=['import','discard','rollover'], aliases=['timeout_action']),
-                    scanningVirtualHosts = dict(type=bool, required=False, default=False, choices=[True, False],
-                        aliases=['scanning_virtual_hosts']),
-                    rolloverType = dict(type=str, required=False, default='template', choices=['nextDay','template'],
-                        aliases=['rollover_type']),
+                    email_on_launch = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    email_on_finish = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    timeout_action = dict(type=str, required=False, default='import', 
+                        choices=['import','discard','rollover']),
+                    scanning_virtual_hosts = dict(type=bool, required=False, default=False, choices=[True, False]),
+                    rollover_type = dict(type=str, required=False, default='template', choices=['nextDay','template']),
                     policy = dict(type=str,required=False),
-                    ipList = dict(type=list, required=False,aliases=['ip_list']),
-                    maxScanTime = dict(type=int, required=False, default=3600, aliases=['max_scan_time']),
+                    ip_list = dict(type=list, required=False),
+                    max_scan_time = dict(type=int, required=False, default=3600),
                     validate_certs = dict(type=bool, required=False, default=True, choices=[True,False]),
                     state = dict(type=str,required=False, default='present',choices=['present','absent'])
             ),
@@ -299,7 +299,7 @@ def main():
             module.fail_json(msg='policy must be specified when type is "policy"')
         elif module.params['type'] == 'plugin' and 'plugin' not in module.params.keys():
             module.fail_json(msg='plugin must be specified when type is "plugin"')
-        elif not module.params['ipList'] and not module.params['assets']:
+        elif not module.params['ip_list'] and not module.params['assets']:
             module.fail_json(msg='assets or ip_list must be provided (or both)')
         elif 'type' not in module.params['schedule']:
             module.fail_json(msg='must provide properly formatted dictionat for schedule')
