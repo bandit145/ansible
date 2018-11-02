@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2017 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
-from ansible.module_utils.basic import *
+from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.net_tools.security_center import SecurityCenterAPI
 
 ANSIBLE_METADATA = {'metadata_version': '1.0',
@@ -223,6 +223,9 @@ ID_MAPS = {
     'reports':{'endpoint':'reportDefinition'}
     }
 
+def build_scan_schedule(module):
+    pass
+
 def ensure(module):
     tenable = SecurityCenterAPI(module)
     tenable.login()
@@ -254,7 +257,11 @@ def ensure(module):
 
 
 schedule_spec = dict(
-    type=dict(type=str,required=True,choices=[True,False]),
+    type=dict(type=str,required=True,choices=['dependent', 'ical', 'never', 'rollover', 'template']),
+    start=dict(type=str,required=False),
+    date=dict(type=str,required=False),
+    timezone=dict(type=str,required=False),
+    repeat=dict(type=str,required=False,choices=['once','daily','weekly','monthly'])
 )
 reports_spec = dict(
     name=dict(type=str,required=True),
